@@ -1,0 +1,15 @@
+name: NFive/plugin-health
+version: 1.0.0
+description: Player health and damage systems
+author: NFive
+license: LGPL-3.0-or-later
+server:
+  main:
+    - NFive.Health.Server
+  include:
+    - NFive.Health.Shared
+client:
+  main:
+    - NFive.Health.Client
+  include:
+    - NFive.Health.Shared
