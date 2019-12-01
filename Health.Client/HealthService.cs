@@ -1,19 +1,19 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using CitizenFX.Core;
 using CitizenFX.Core.Native;
 using JetBrains.Annotations;
 using NFive.Health.Shared;
 using NFive.Health.Shared.Events;
 using NFive.SDK.Client.Commands;
+using NFive.SDK.Client.Communications;
 using NFive.SDK.Client.Events;
 using NFive.SDK.Client.Interface;
-using NFive.SDK.Client.Rpc;
 using NFive.SDK.Client.Services;
 using NFive.SDK.Core.Diagnostics;
 using NFive.SDK.Core.Models.Player;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using WeaponHash = CitizenFX.Core.WeaponHash;
 
 namespace NFive.Health.Client
@@ -21,24 +21,19 @@ namespace NFive.Health.Client
 	[PublicAPI]
 	public class HealthService : Service
 	{
-		private Configuration config;
-		private List<string> damages = new List<string>();
+		private readonly List<string> damages = new List<string>();
 		private string lastDamage = string.Empty;
 
-		public HealthService(ILogger logger, ITickManager ticks, IEventManager events, IRpcHandler rpc, ICommandManager commands, OverlayManager overlay, User user) : base(logger, ticks, events, rpc, commands, overlay, user) { }
+		public HealthService(ILogger logger, ITickManager ticks, ICommunicationManager comms, ICommandManager commands, IOverlayManager overlay, User user) : base(logger, ticks, comms, commands, overlay, user) { }
 
 		public override async Task Started()
 		{
-			// Request server configuration
-			this.config = await this.Rpc.Event(HealthEvents.Configuration).Request<Configuration>();
-
-			// Update local configuration on server configuration change
-			this.Rpc.Event(HealthEvents.Configuration).On<Configuration>((e, c) => this.config = c);
-
-			this.Events.On<string, List<object>>("gameEventTriggered", OnGameEventTriggered);
+			EventHandlers["gameEventTriggered"] += new Action<string, List<object>>(OnGameEventTriggered);
 
 			// Attach a tick handler
-			this.Ticks.Attach(OnTick);
+			this.Ticks.On(OnTick);
+
+			await base.Started();
 		}
 
 		private void OnGameEventTriggered(string @event, List<object> args)
@@ -72,7 +67,7 @@ namespace NFive.Health.Client
 
 			if (victimKilled)
 			{
-				this.Events.Raise(HealthEvents.PedKilled, new PedKilled
+				this.Comms.Event(HealthEvents.PedKilled).ToClient().Emit(new PedKilled
 				{
 					VictimHandle = victim.Handle,
 					KillerHandle = attacker.Handle,
@@ -83,7 +78,7 @@ namespace NFive.Health.Client
 			}
 			else
 			{
-				this.Events.Raise(HealthEvents.PedDamaged, new PedDamaged
+				this.Comms.Event(HealthEvents.PedDamaged).ToClient().Emit(new PedDamaged
 				{
 					VictimHandle = victim.Handle,
 					AttackerHandle = attacker.Handle,

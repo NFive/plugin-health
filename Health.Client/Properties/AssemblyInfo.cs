@@ -5,7 +5,7 @@ using NFive.SDK.Client;
 [assembly: ClientPlugin(SDK.Version)]
 
 [assembly: AssemblyTitle("NFive Health")]
-[assembly: AssemblyDescription("Player health and damage systems")]
+[assembly: AssemblyDescription("Player health and damage events")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("NFive")]
 [assembly: AssemblyProduct("NFive Health Client Plugin")]
